@@ -1,3 +1,4 @@
+// models/Lesson.ts
 import { Schema, model, models, Types } from "mongoose";
 
 export interface ILesson {
@@ -7,9 +8,7 @@ export interface ILesson {
   order: number;
   durationSec?: number;
   freePreview?: boolean;
-  // ✅ stats fields
-  views?: number;
-  likesCount?: number;
+  thumbnailUrl?: string;   // 👈 NEW
 }
 
 const LessonSchema = new Schema<ILesson>(
@@ -20,10 +19,7 @@ const LessonSchema = new Schema<ILesson>(
     order: { type: Number, default: 0 },
     durationSec: Number,
     freePreview: { type: Boolean, default: false },
-
-    // ✅ defaults so increments always work
-    views: { type: Number, default: 0 },
-    likesCount: { type: Number, default: 0 },
+    thumbnailUrl: String,  // 👈 NEW
   },
   { timestamps: true }
 );

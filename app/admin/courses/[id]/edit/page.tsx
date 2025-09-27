@@ -1,4 +1,3 @@
-// app/(dashboard)/admin/courses/[id]/edit/page.tsx
 import AdminGuard from "@/components/AdminGuard";
 import { dbConnect } from "@/lib/db";
 import Course from "@/models/Course";
@@ -68,7 +67,21 @@ export default async function EditCourse({ params }: Props) {
     const vimeoId = raw.replace(/[^0-9]/g, "");
     if (!title || !vimeoId) return;
     const order = await Lesson.countDocuments({ course: id });
-    await Lesson.create({ course: id, title, vimeoId, order });
+    const thumbnailUrl = String(formData.get("thumbnailUrl") ?? "").trim();
+    await Lesson.create({ course: id, title, vimeoId, order, thumbnailUrl });
+
+    revalidatePath(`/admin/courses/${id}/edit`);
+  }
+
+  async function updateLesson(formData: FormData) {
+    "use server";
+    await dbConnect();
+    const lid = String(formData.get("id") ?? "");
+    const title = String(formData.get("title") ?? "").trim();
+    const raw = String(formData.get("vimeoId") ?? "");
+    const vimeoId = raw.replace(/[^0-9]/g, "");
+    if (!lid || !title || !vimeoId) return;
+    await Lesson.updateOne({ _id: lid, course: id }, { $set: { title, vimeoId } });
     revalidatePath(`/admin/courses/${id}/edit`);
   }
 
@@ -111,13 +124,12 @@ export default async function EditCourse({ params }: Props) {
     vimeoId: l.vimeoId,
     order: l.order,
   }));
-
   const count = items.length;
 
   return (
     <AdminGuard>
       <div className="space-y-6">
-        {/* Compact header card */}
+        {/* Header card */}
         <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
           <div className="relative aspect-[16/6] w-full">
             {course.thumbnailUrl ? (
@@ -160,7 +172,6 @@ export default async function EditCourse({ params }: Props) {
                   )}
                 </div>
 
-                {/* Primary actions (no scrolling) */}
                 <div className="flex items-center gap-2">
                   <Link
                     href={`/courses/${course._id}`}
@@ -168,7 +179,6 @@ export default async function EditCourse({ params }: Props) {
                   >
                     Preview
                   </Link>
-                  {/* Open modals (client) */}
                   <EditCourseModal
                     initial={{
                       title: course.title || "",
@@ -178,22 +188,30 @@ export default async function EditCourse({ params }: Props) {
                     }}
                     onSubmit={updateCourse}
                   />
-                  <AddLessonModal onSubmit={addLesson} />
+                
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* One main panel: Lessons manager (sticky header) */}
+        {/* Lessons panel */}
         <div className="rounded-2xl border border-white/10 bg-white/5">
           <div className="sticky top-16 z-10 flex items-center justify-between border-b border-white/10 bg-white/5/80 px-4 py-3 backdrop-blur">
             <h2 className="font-semibold">Lessons</h2>
-            <span className="text-xs text-white/60">drag to reorder</span>
+            <div className="flex items-center gap-2">
+              {/* 👉 Put Add lesson right here for discoverability */}
+              <AddLessonModal onSubmit={addLesson} />
+            </div>
           </div>
 
           <div className="p-4">
-            <LessonListSortable items={items} onReorder={saveOrder} onDelete={deleteLesson} />
+            <LessonListSortable
+              items={items}
+              onReorder={saveOrder}
+              onDelete={deleteLesson}
+              onEdit={updateLesson}
+            />
           </div>
         </div>
       </div>
