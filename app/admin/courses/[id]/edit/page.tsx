@@ -40,9 +40,12 @@ export default async function EditCourse({ params }: Props) {
   const course = await Course.findById(id).lean<CourseLean | null>();
   if (!course) notFound();
 
-  const lessons = await Lesson.find({ course: id })
-    .sort({ order: 1 })
-    .lean<LessonLean[]>();
+const lessons = await Lesson.find({ course: id })
+  .sort({ order: 1 })
+  .select("_id course title vimeoId order views likesCount thumbnailUrl")
+  .lean();
+
+
 
   // ---------- Server actions ----------
   async function updateCourse(formData: FormData) {
@@ -118,12 +121,15 @@ export default async function EditCourse({ params }: Props) {
   // ------------------------------------
 
   // Safe props for client components
-  const items = lessons.map((l) => ({
-    id: String(l._id),
-    title: l.title,
-    vimeoId: l.vimeoId,
-    order: l.order,
-  }));
+const items = lessons.map((l) => ({
+  id: String(l._id),
+  title: l.title,
+  vimeoId: l.vimeoId,
+  order: l.order,
+  thumbnailUrl: (l as any).thumbnailUrl || "",
+  views: (l as any).views || 0,
+  likesCount: (l as any).likesCount || 0,
+}));
   const count = items.length;
 
   return (
